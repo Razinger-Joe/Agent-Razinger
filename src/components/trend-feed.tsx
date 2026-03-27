@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
+import toast from "react-hot-toast";
 
 interface Trend {
   cat: "ai" | "sec" | "dev";
@@ -38,9 +39,13 @@ export default function TrendFeed() {
   const loadTrends = useCallback(async () => {
     setLoading(true);
     try {
+      const apiKey = localStorage.getItem("anthropic_api_key");
       const res = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(apiKey ? { "x-custom-api-key": apiKey } : {}),
+        },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 1000,
@@ -54,6 +59,14 @@ export default function TrendFeed() {
       });
       const data = await res.json();
       const raw = data.content?.[0]?.text || "[]";
+      
+      if (raw.includes("No API key configured")) {
+         toast.error("Set your Anthropic API Key in the AI Agent tab settings first.");
+         setTrends([]);
+         setLoading(false);
+         return;
+      }
+      
       const cleaned = raw.replace(/```json|```/g, "").trim();
       const parsed = JSON.parse(cleaned);
       if (Array.isArray(parsed)) {
@@ -61,6 +74,7 @@ export default function TrendFeed() {
       }
     } catch {
       setTrends([]);
+      toast.error("Failed to load trends.");
     }
     setLoading(false);
   }, []);

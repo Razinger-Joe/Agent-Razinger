@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import toast from "react-hot-toast";
 
 const TEMPLATES: Record<string, { system: string; user: string }> = {
   pentest: {
@@ -81,16 +82,20 @@ export default function JsonPrompter() {
 
   const enhancePrompt = async () => {
     if (!systemPrompt && !userMessage) {
-      alert("Fill in at least one field first.");
+      toast.error("Fill in at least one field first.");
       return;
     }
     setEnhancing(true);
     setJsonOutput("// Enhancing prompt with AI...");
 
     try {
+      const apiKey = localStorage.getItem("anthropic_api_key");
       const res = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(apiKey ? { "x-custom-api-key": apiKey } : {}),
+        },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 1000,
@@ -117,9 +122,11 @@ export default function JsonPrompter() {
           messages: [{ role: "user", content: parsed.user || userMessage }],
         };
         setJsonOutput(JSON.stringify(obj, null, 2));
+        toast.success("Prompt enhanced successfully!");
       }, 50);
     } catch {
       setJsonOutput("// Error enhancing prompt. Try again.");
+      toast.error("Failed to enhance prompt. Check API key.");
     }
     setEnhancing(false);
   };
@@ -127,7 +134,7 @@ export default function JsonPrompter() {
   const copyJSON = async () => {
     try {
       await navigator.clipboard.writeText(jsonOutput);
-      alert("JSON copied!");
+      toast.success("JSON copied to clipboard!");
     } catch {
       const ta = document.createElement("textarea");
       ta.value = jsonOutput;
@@ -135,7 +142,7 @@ export default function JsonPrompter() {
       ta.select();
       document.execCommand("copy");
       document.body.removeChild(ta);
-      alert("JSON copied!");
+      toast.success("JSON copied to clipboard!");
     }
   };
 

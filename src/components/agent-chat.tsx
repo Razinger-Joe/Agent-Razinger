@@ -5,6 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import ReactMarkdown from "react-markdown";
+
+// Lucide icons will be installed next
+import { Settings, Trash2 } from "lucide-react";
 
 const SYSTEM_PROMPT = `You are Razinger's personal AI agent. You know everything about him:
 - Name: Josef Razinger (goes by Razinger), final-year Software Engineering student at Kisii University, Nairobi
@@ -12,14 +16,11 @@ const SYSTEM_PROMPT = `You are Razinger's personal AI agent. You know everything
 - Expertise: Cybersecurity, Ethical Hacking, Kali Linux, AI/ML, DevOps, Automation (Selenium, Playwright, Jest)
 - Projects: Kivuli Command Center (team leader, security system), EpiPredict (epidemic prediction AI), Netfluenz (AI creator marketplace), Cyber Guard (community threat response)
 - Background: 6-month cybersecurity bootcamp at FabLab Winam (offense, networking, defense, GRC), HORIZON AI hackathon participant
-- Applied to Nairobi DevOps Community writing team
-- Completed Malware Analysis Datasets group project (Head of Presentation)
 Coding style: Security-first, modular, clean code. Favors Python, Linux tools, microservices, event-driven architecture.
 Always give practical, specific advice relevant to Razinger's actual projects and goals. Be direct and technical.`;
 
 const CONTEXT_TAGS = [
   "Josef Razinger",
-  "Kisii Uni · SE Final Year",
   "Cybersecurity",
   "AI/ML",
   "Kali Linux",
@@ -36,56 +37,94 @@ interface AgentChatProps {
   onInjectedConsumed?: () => void;
 }
 
-export default function AgentChat({ injectedMessage, onInjectedConsumed }: AgentChatProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "ai",
-      content:
-        "Hey Razinger! I'm your personal AI agent — I know your stack, your projects, and your goals. Ask me anything about cybersecurity, AI, your projects like Kivuli, EpiPredict, or Netfluenz, or system development. Let's build.",
-    },
-  ]);
+const INITIAL_MSG: Message = {
+  role: "ai",
+  content:
+    "Hey Razinger! I'm your personal AI agent — I know your stack, your projects, and your goals. Ask me anything about cybersecurity, AI, your projects like Kivuli or EpiPredict, or system development.",
+};
+
+export default function AgentChat({
+  injectedMessage,
+  onInjectedConsumed,
+}: AgentChatProps) {
+  const [messages, setMessages] = useState<Message[]>([INITIAL_MSG]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [apiKey, setApiKey] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
+
+  const scrollEndRef = useRef<HTMLDivElement>(null);
+
+  // Load API key from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("anthropic_api_key");
+    if (saved) setApiKey(saved);
+  }, []);
+
+  const saveApiKey = (key: string) => {
+    setApiKey(key);
+    localStorage.setItem("anthropic_api_key", key);
+  };
 
   const scrollToBottom = () => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (scrollEndRef.current) {
+      scrollEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   };
 
   useEffect(scrollToBottom, [messages, loading]);
 
-  const sendMessage = useCallback(async (msg: string) => {
-    if (!msg.trim() || loading) return;
+  const clearChat = () => {
+    setMessages([INITIAL_MSG]);
+  };
 
-    const userMsg: Message = { role: "user", content: msg.trim() };
-    setMessages((prev) => [...prev, userMsg]);
-    setInput("");
-    setLoading(true);
+  const sendMessage = useCallback(
+    async (msg: string) => {
+      if (!msg.trim() || loading) return;
 
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          system: SYSTEM_PROMPT,
-          messages: [{ role: "user", content: msg.trim() }],
-        }),
-      });
-      const data = await res.json();
-      const reply = data.content?.[0]?.text || "No response.";
-      setMessages((prev) => [...prev, { role: "ai", content: reply }]);
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        { role: "ai", content: "Connection error. Check your API setup." },
-      ]);
-    }
-    setLoading(false);
-  }, [loading]);
+      const userMsg: Message = { role: "user", content: msg.trim() };
+      const newMessages = [...messages, userMsg];
+      setMessages(newMessages);
+      setInput("");
+      setLoading(true);
+
+      try {
+        // Build conversation history (exclude initial agent greeting if we want strict multi-turn, 
+        // but including it is fine as it establishes persona)
+        const apiMessages = newMessages
+          .filter((m) => m.content !== INITIAL_MSG.content || m.role === "user")
+          .map((m) => ({
+            role: m.role === "ai" ? "assistant" : "user",
+            content: m.content,
+          }));
+
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(apiKey ? { "x-custom-api-key": apiKey } : {}),
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 1500,
+            system: SYSTEM_PROMPT,
+            messages: apiMessages,
+          }),
+        });
+
+        const data = await res.json();
+        const reply = data.content?.[0]?.text || "No response.";
+        setMessages((prev) => [...prev, { role: "ai", content: reply }]);
+      } catch {
+        setMessages((prev) => [
+          ...prev,
+          { role: "ai", content: "Connection error. Check your API setup." },
+        ]);
+      }
+      setLoading(false);
+    },
+    [loading, messages, apiKey]
+  );
 
   // Handle injected messages from Code Arch tab
   useEffect(() => {
@@ -103,35 +142,86 @@ export default function AgentChat({ injectedMessage, onInjectedConsumed }: Agent
   };
 
   return (
-    <div className="glass rounded-xl overflow-hidden border border-line">
-      {/* Context bar */}
-      <div className="bg-neon/5 border-b border-line px-4 py-2.5 flex flex-wrap items-center gap-2">
-        <span className="font-mono text-xs text-neon tracking-wider">
-          CONTEXT LOADED:
-        </span>
-        {CONTEXT_TAGS.map((tag) => (
-          <Badge
-            key={tag}
-            variant="outline"
-            className="bg-neon/10 border-neon/20 text-neon text-[10px] font-mono"
+    <div className="glass rounded-xl overflow-hidden border border-line flex flex-col h-[520px]">
+      {/* Context bar with Actions */}
+      <div className="bg-neon/5 border-b border-line px-4 py-2.5 flex justify-between items-center">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-mono text-xs text-neon tracking-wider">
+            CONTEXT LOADED:
+          </span>
+          {CONTEXT_TAGS.map((tag) => (
+            <Badge
+              key={tag}
+              variant="outline"
+              className="bg-neon/10 border-neon/20 text-neon text-[10px] font-mono whitespace-nowrap"
+            >
+              {tag}
+            </Badge>
+          ))}
+        </div>
+        <div className="flex gap-2 shrink-0 ml-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={clearChat}
+            className="h-7 w-7 text-dim hover:text-danger hover:bg-danger/10"
+            title="Clear Chat"
           >
-            {tag}
-          </Badge>
-        ))}
+            <Trash2 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowSettings(!showSettings)}
+            className={`h-7 w-7 ${
+              showSettings ? "text-neon bg-neon/10" : "text-dim hover:text-neon hover:bg-neon/10"
+            }`}
+            title="API Settings"
+          >
+            <Settings className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
+      {/* Settings Panel */}
+      {showSettings && (
+        <div className="bg-deep border-b border-line p-4 animate-fade-in">
+          <label className="block text-xs font-mono text-dim mb-2">
+            ANTHROPIC API KEY (Saved locally)
+          </label>
+          <div className="flex gap-2">
+            <Input
+              type="password"
+              placeholder="sk-ant-..."
+              value={apiKey}
+              onChange={(e) => saveApiKey(e.target.value)}
+              className="font-mono text-xs bg-surface border-line focus:border-neon h-8"
+            />
+            <Button
+              className="h-8 bg-neon text-black font-mono text-xs font-bold hover:bg-neon/80"
+              onClick={() => setShowSettings(false)}
+            >
+              SAVE
+            </Button>
+          </div>
+          <p className="text-[10px] text-dim font-mono mt-2">
+            Your key is stored securely in your browser&apos;s localStorage and never touches our servers.
+          </p>
+        </div>
+      )}
+
       {/* Messages */}
-      <ScrollArea className="h-[420px]" ref={scrollRef}>
-        <div className="p-5 flex flex-col gap-3.5">
+      <ScrollArea className="flex-1">
+        <div className="p-5 flex flex-col gap-4">
           {messages.map((msg, i) => (
             <div
               key={i}
-              className={`flex gap-2.5 items-start animate-fade-in ${
+              className={`flex gap-3 items-start animate-fade-in ${
                 msg.role === "user" ? "flex-row-reverse" : ""
               }`}
             >
               <div
-                className={`w-8 h-8 rounded-md flex items-center justify-center text-[10px] font-mono font-bold shrink-0 ${
+                className={`w-8 h-8 flex-shrink-0 rounded-md flex items-center justify-center text-[10px] font-mono font-bold mt-1 ${
                   msg.role === "ai"
                     ? "bg-neon/15 border border-neon/30 text-neon"
                     : "bg-cyan/15 border border-cyan/30 text-cyan"
@@ -140,30 +230,31 @@ export default function AgentChat({ injectedMessage, onInjectedConsumed }: Agent
                 {msg.role === "ai" ? "AI" : "RZ"}
               </div>
               <div
-                className={`max-w-[75%] px-4 py-3 rounded-xl text-sm leading-relaxed border border-line ${
+                className={`max-w-[85%] px-4 py-3 rounded-xl text-sm leading-relaxed border border-line overflow-hidden ${
                   msg.role === "ai"
-                    ? "bg-white/[0.03] rounded-tl-sm"
-                    : "bg-cyan/[0.08] rounded-tr-sm text-right"
+                    ? "bg-white/[0.03] rounded-tl-sm text-foreground prose-invert prose-p:my-1 prose-pre:bg-deep prose-pre:border prose-pre:border-line prose-pre:p-3 prose-pre:rounded-md prose-code:text-neon prose-code:font-mono prose-code:text-[13px] prose-a:text-cyan hover:prose-a:text-neon"
+                    : "bg-cyan/[0.08] rounded-tr-sm text-right text-foreground"
                 }`}
               >
-                {msg.content.split("\n").map((line, j) => (
-                  <span key={j}>
-                    {line}
-                    {j < msg.content.split("\n").length - 1 && <br />}
-                  </span>
-                ))}
+                {msg.role === "ai" ? (
+                  <div className="whitespace-pre-wrap breakdown-words">
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <div className="whitespace-pre-wrap">{msg.content}</div>
+                )}
               </div>
             </div>
           ))}
 
           {/* Typing indicator */}
           {loading && (
-            <div className="flex gap-2.5 items-start animate-fade-in">
-              <div className="w-8 h-8 rounded-md flex items-center justify-center text-[10px] font-mono font-bold bg-neon/15 border border-neon/30 text-neon shrink-0">
+            <div className="flex gap-3 items-start animate-fade-in">
+              <div className="w-8 h-8 shrink-0 rounded-md flex items-center justify-center text-[10px] font-mono font-bold bg-neon/15 border border-neon/30 text-neon mt-1">
                 AI
               </div>
-              <div className="px-4 py-3 rounded-xl rounded-tl-sm bg-white/[0.03] border border-line">
-                <div className="flex gap-1 items-center py-1">
+              <div className="px-4 py-4 rounded-xl rounded-tl-sm bg-white/[0.03] border border-line">
+                <div className="flex gap-1 items-center">
                   <span className="w-1.5 h-1.5 rounded-full bg-neon animate-typing-bounce" />
                   <span
                     className="w-1.5 h-1.5 rounded-full bg-neon animate-typing-bounce"
@@ -177,22 +268,24 @@ export default function AgentChat({ injectedMessage, onInjectedConsumed }: Agent
               </div>
             </div>
           )}
+          {/* Scroll Sentinel */}
+          <div ref={scrollEndRef} className="h-1" />
         </div>
       </ScrollArea>
 
       {/* Input */}
-      <div className="flex border-t border-line">
+      <div className="flex border-t border-line shrink-0">
         <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Ask about your projects, cybersec, code structure..."
-          className="flex-1 border-0 rounded-none bg-transparent px-4 py-3.5 text-sm focus-visible:ring-0 placeholder:text-dim"
+          className="flex-1 border-0 rounded-none bg-deep px-4 py-4 text-sm focus-visible:ring-0 placeholder:text-dim h-auto"
         />
         <Button
           onClick={() => sendMessage(input)}
           disabled={loading || !input.trim()}
-          className="rounded-none px-5 bg-neon text-black font-mono text-xs font-bold tracking-wider hover:bg-neon/85 disabled:opacity-40"
+          className="rounded-none px-6 h-auto bg-neon text-black font-mono text-xs font-bold tracking-wider hover:bg-neon/85 disabled:opacity-40"
         >
           SEND
         </Button>

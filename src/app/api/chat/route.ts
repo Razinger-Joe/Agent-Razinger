@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const apiKey = process.env.ANTHROPIC_API_KEY;
+    const clientKey = req.headers.get("x-custom-api-key");
+    const apiKey = clientKey || process.env.ANTHROPIC_API_KEY;
 
     if (!apiKey) {
       return NextResponse.json(
@@ -11,7 +12,7 @@ export async function POST(req: NextRequest) {
           content: [
             {
               type: "text",
-              text: "⚠️ No API key configured. Add ANTHROPIC_API_KEY to your .env.local file to enable AI responses. For now, the interface is fully functional — you can explore all tabs, build JSON prompts, and browse the architecture cards.",
+              text: "⚠️ No API key configured. Click the gear icon in the chat context bar to add your own Anthropic key, or add ANTHROPIC_API_KEY to the .env.local file.",
             },
           ],
         },
