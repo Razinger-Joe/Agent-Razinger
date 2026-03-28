@@ -57,13 +57,13 @@ export default function AgentChat({
 
   // Load API key from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem("anthropic_api_key");
+    const saved = localStorage.getItem("gemini_api_key");
     if (saved) setApiKey(saved);
   }, []);
 
   const saveApiKey = (key: string) => {
     setApiKey(key);
-    localStorage.setItem("anthropic_api_key", key);
+    localStorage.setItem("gemini_api_key", key);
   };
 
   const scrollToBottom = () => {
@@ -105,7 +105,7 @@ export default function AgentChat({
             ...(apiKey ? { "x-custom-api-key": apiKey } : {}),
           },
           body: JSON.stringify({
-            model: "claude-sonnet-4-20250514",
+            model: "gemini-2.5-flash",
             max_tokens: 1500,
             system: SYSTEM_PROMPT,
             messages: apiMessages,
@@ -187,12 +187,12 @@ export default function AgentChat({
       {showSettings && (
         <div className="bg-deep border-b border-line p-4 animate-fade-in">
           <label className="block text-xs font-mono text-dim mb-2">
-            ANTHROPIC API KEY (Saved locally)
+            GOOGLE GEMINI API KEY (Saved locally)
           </label>
           <div className="flex gap-2">
             <Input
               type="password"
-              placeholder="sk-ant-..."
+              placeholder="AIzaSy..."
               value={apiKey}
               onChange={(e) => saveApiKey(e.target.value)}
               className="font-mono text-xs bg-surface border-line focus:border-neon h-8"

@@ -4,7 +4,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const clientKey = req.headers.get("x-custom-api-key");
-    const apiKey = clientKey || process.env.ANTHROPIC_API_KEY;
+    const apiKey = clientKey || process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
       return NextResponse.json(
@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
           content: [
             {
               type: "text",
-              text: "⚠️ No API key configured. Click the gear icon in the chat context bar to add your own Anthropic key, or add ANTHROPIC_API_KEY to the .env.local file.",
+              text: "⚠️ No API key configured. Click the gear icon in the chat context bar to add your own Google Gemini key, or add GEMINI_API_KEY to the .env.local file.",
             },
           ],
         },
@@ -20,18 +20,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const geminiMessages = (body.messages || []).map((m: any) => ({
+      role: m.role === "assistant" ? "model" : "user",
+      parts: [{ text: m.content }],
+    }));
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: body.model || "claude-sonnet-4-20250514",
-        max_tokens: body.max_tokens || 1000,
-        system: body.system || "",
-        messages: body.messages || [],
+        systemInstruction: body.system ? {
+          parts: [{ text: body.system }]
+        } : undefined,
+        contents: geminiMessages,
       }),
     });
 
@@ -51,7 +54,14 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await response.json();
-    return NextResponse.json(data);
+    return NextResponse.json({
+      content: [
+        {
+          type: "text",
+          text: data.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated."
+        }
+      ]
+    });
   } catch (error) {
     return NextResponse.json(
       {
