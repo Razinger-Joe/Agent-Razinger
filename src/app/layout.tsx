@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Space_Mono, Syne } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import "./globals.css";
+import { UIContextProvider } from "@/lib/ui-context";
 
 const syne = Syne({
   variable: "--font-syne",
@@ -32,7 +33,9 @@ export default function RootLayout({
       className={`${syne.variable} ${spaceMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        {children}
+      <UIContextProvider>
+      {children}
+    </UIContextProvider>
         <Toaster 
           position="bottom-right"
           toastOptions={{

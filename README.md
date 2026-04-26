@@ -74,3 +74,12 @@ Contributions, feature additions, or security patches to Agent Razinger are stro
 3. Commit your changes (`git commit -m 'Add some AmazingTool'`)
 4. Push to the branch.
 5. Open a Pull Request!
+
+---
+
+## 📝 Changelog
+
+### v0.2.0 - Core UI Strategy Overhaul
+- **UI Architecture Transition**: Refactored the legacy `Tabs` paradigm into a natively responsive, modern, multi-pane CSS Grid interface. 
+- **Centralized UI Context**: Added `UIContextProvider` globally wrapping the entire monolithic structure to properly track pane visibilities.
+- **Dynamic Sidebar Control Panel**: Replaced tab navigation with a persistent sidebar menu system to dynamically control layout components (AI Agent, JSON Prompter, Trends, Code Arch).
