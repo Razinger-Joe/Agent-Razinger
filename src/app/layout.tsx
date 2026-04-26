@@ -30,30 +30,31 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${syne.variable} ${spaceMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-      <UIContextProvider>
-      {children}
-    </UIContextProvider>
-        <Toaster 
-          position="bottom-right"
-          toastOptions={{
-            style: {
-              background: '#080c10',
-              color: '#e2e8f0',
-              border: '1px solid #1c2a3a',
-              fontFamily: 'var(--font-space-mono)',
-              fontSize: '12px',
-            },
-            success: {
-              iconTheme: {
-                primary: '#00f5a0',
-                secondary: '#000',
+        <UIContextProvider>
+          {children}
+          <Toaster 
+            position="bottom-right"
+            toastOptions={{
+              style: {
+                background: '#080c10',
+                color: '#e2e8f0',
+                border: '1px solid #1c2a3a',
+                fontFamily: 'var(--font-space-mono)',
+                fontSize: '12px',
               },
-            },
-          }}
-        />
+              success: {
+                iconTheme: {
+                  primary: '#00f5a0',
+                  secondary: '#000',
+                },
+              },
+            }}
+          />
+        </UIContextProvider>
       </body>
     </html>
   );

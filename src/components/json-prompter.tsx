@@ -41,10 +41,9 @@ const TEMPLATES: Record<string, { system: string; user: string }> = {
 };
 
 const MODELS = [
-  "claude-sonnet-4-20250514",
-  "claude-opus-4-20250514",
-  "gpt-4o",
+  "gemini-2.5-flash",
   "gemini-2.0-flash",
+  "gemini-1.5-pro",
 ];
 
 const selectCls =
@@ -89,7 +88,7 @@ export default function JsonPrompter() {
     setJsonOutput("// Enhancing prompt with AI...");
 
     try {
-      const apiKey = localStorage.getItem("anthropic_api_key");
+      const apiKey = localStorage.getItem("gemini_api_key");
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { 
@@ -97,7 +96,7 @@ export default function JsonPrompter() {
           ...(apiKey ? { "x-custom-api-key": apiKey } : {}),
         },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
+          model: "gemini-2.5-flash",
           max_tokens: 1000,
           messages: [
             {

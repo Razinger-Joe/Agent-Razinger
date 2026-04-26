@@ -15,31 +15,47 @@ export default function Home() {
     showTrends,
     showArch,
     setShowAgent,
-    setShowJson,
-    setShowTrends,
-    setShowArch,
   } = useUIContext();
 
   const handleAskArch = (question: string) => {
-    // Ensure Agent pane is visible and inject message via context (could use a global state, but for now we just toggle)
     setShowAgent(true);
-    // TODO: inject message handling (requires additional context) – placeholder
+    // TODO: inject message handling via global state
   };
 
+  // Count visible panes for dynamic grid
+  const visibleCount = [showAgent, showJson, showTrends, showArch].filter(Boolean).length;
+  const gridCols = visibleCount <= 1 ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-2";
+
   return (
-    <div className="relative z-[1] max-w-[1100px] mx-auto px-5 py-6 w-full flex gap-4">
-      <Sidebar />
-      <div className="grid-dashboard flex-1 grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
-        {showAgent && (
-          <AgentChat injectedMessage={null} onInjectedConsumed={() => {}} />
-        )}
-        {showJson && <JsonPrompter />
-        }
-        {showTrends && <TrendFeed />}
-        {showArch && <CodeArch onAskArch={handleAskArch} />}
+    <div className="relative z-[1] max-w-[1440px] mx-auto px-4 sm:px-6 py-5 w-full flex flex-col min-h-screen">
+      <Header />
+      <div className="flex gap-4 flex-1">
+        <Sidebar />
+        <main className={`grid-dashboard flex-1 grid ${gridCols} gap-4 auto-rows-min`}>
+          {showAgent && (
+            <AgentChat injectedMessage={null} onInjectedConsumed={() => {}} />
+          )}
+          {showJson && <JsonPrompter />}
+          {showTrends && (
+            <div className="glass rounded-xl border border-line p-5">
+              <TrendFeed />
+            </div>
+          )}
+          {showArch && (
+            <div className="glass rounded-xl border border-line p-5">
+              <CodeArch onAskArch={handleAskArch} />
+            </div>
+          )}
+          {visibleCount === 0 && (
+            <div className="col-span-full flex items-center justify-center h-64">
+              <div className="text-center">
+                <p className="text-dim font-mono text-sm mb-2">// NO PANES ACTIVE</p>
+                <p className="text-dim/60 font-mono text-xs">Toggle panes from the sidebar to get started.</p>
+              </div>
+            </div>
+          )}
+        </main>
       </div>
     </div>
   );
 }
-
-

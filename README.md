@@ -83,3 +83,10 @@ Contributions, feature additions, or security patches to Agent Razinger are stro
 - **UI Architecture Transition**: Refactored the legacy `Tabs` paradigm into a natively responsive, modern, multi-pane CSS Grid interface. 
 - **Centralized UI Context**: Added `UIContextProvider` globally wrapping the entire monolithic structure to properly track pane visibilities.
 - **Dynamic Sidebar Control Panel**: Replaced tab navigation with a persistent sidebar menu system to dynamically control layout components (AI Agent, JSON Prompter, Trends, Code Arch).
+
+### v0.3.0 - API Consistency & UI Polish
+- **Gemini API Unification**: Fixed JSON Prompter and Trend Feed components that were still referencing Anthropic/Claude — now fully use `gemini-2.5-flash` and `gemini_api_key`.
+- **Header Restoration**: Restored the `RAZINGER // CMD` header bar with Shield icon branding, GitHub repo link, and system status indicator.
+- **Sidebar Upgrade**: Rewrote sidebar with Lucide icons, active pane indicators with glow effects, panel count, version badge, and mobile hamburger menu support.
+- **Layout Improvements**: Dynamic 2-column grid layout, glass-wrapped pane containers, empty-state messaging when all panes are hidden.
+- **Hydration Fix**: Resolved Next.js hydration mismatch from browser extension attribute injection.

@@ -185,3 +185,23 @@ body::before {
 .neon-text {
   text-shadow: 0 0 10px rgba(0, 245, 160, 0.3);
 }
+
+/* Sidebar toggle */
+.sidebar-toggle:hover {
+  transform: translateX(2px);
+}
+
+/* Pane header bar */
+.pane-header {
+  font-family: var(--font-space-mono);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-neon);
+  text-shadow: 0 0 10px rgba(0, 245, 160, 0.3);
+}
+
+/* Mobile sidebar z-index */
+.z-45 {
+  z-index: 45;
+}

@@ -39,7 +39,7 @@ export default function TrendFeed() {
   const loadTrends = useCallback(async () => {
     setLoading(true);
     try {
-      const apiKey = localStorage.getItem("anthropic_api_key");
+      const apiKey = localStorage.getItem("gemini_api_key");
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { 
@@ -47,12 +47,12 @@ export default function TrendFeed() {
           ...(apiKey ? { "x-custom-api-key": apiKey } : {}),
         },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
+          model: "gemini-2.5-flash",
           max_tokens: 1000,
           messages: [
             {
               role: "user",
-              content: `You are a tech intelligence feed. Return ONLY a valid JSON array (no markdown) of 6 current trends (2 AI, 2 cybersecurity, 2 DevOps/systems). Each item: { "cat": "ai"|"sec"|"dev", "title": "...", "desc": "2 sentence summary of the trend and why it matters for developers", "date": "March 2026" }. Focus on: AI agents, LLM security, zero-trust, container security, MLOps, platform engineering. Be specific and current.`,
+              content: `You are a tech intelligence feed. Return ONLY a valid JSON array (no markdown) of 6 current trends (2 AI, 2 cybersecurity, 2 DevOps/systems). Each item: { "cat": "ai"|"sec"|"dev", "title": "...", "desc": "2 sentence summary of the trend and why it matters for developers", "date": "April 2026" }. Focus on: AI agents, LLM security, zero-trust, container security, MLOps, platform engineering. Be specific and current.`,
             },
           ],
         }),
@@ -61,7 +61,7 @@ export default function TrendFeed() {
       const raw = data.content?.[0]?.text || "[]";
       
       if (raw.includes("No API key configured")) {
-         toast.error("Set your Anthropic API Key in the AI Agent tab settings first.");
+         toast.error("Set your Gemini API Key in the AI Agent settings first.");
          setTrends([]);
          setLoading(false);
          return;
