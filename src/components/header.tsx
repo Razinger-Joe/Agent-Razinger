@@ -1,8 +1,11 @@
 "use client";
 
-import { ExternalLink, Shield } from "lucide-react";
+import { ExternalLink, Shield, Settings } from "lucide-react";
+import { useUIContext } from "@/lib/ui-context";
 
 export default function Header() {
+  const { setShowSettings } = useUIContext();
+
   return (
     <header className="glass-strong flex items-center justify-between px-5 sm:px-6 py-3.5 rounded-xl mb-4">
       <div className="flex items-center gap-3">
@@ -29,6 +32,13 @@ export default function Header() {
         >
           <ExternalLink className="w-4 h-4" />
         </a>
+        <button
+          onClick={() => setShowSettings(true)}
+          className="text-dim hover:text-neon transition-colors"
+          aria-label="Settings"
+        >
+          <Settings className="w-4 h-4" />
+        </button>
         <div className="flex items-center gap-2 text-xs text-dim font-mono">
           <div className="w-2 h-2 rounded-full bg-neon animate-pulse-dot" />
           <span className="hidden sm:inline">SYSTEM ONLINE</span>

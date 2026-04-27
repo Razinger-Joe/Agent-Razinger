@@ -6,6 +6,7 @@ import JsonPrompter from "@/components/json-prompter";
 import TrendFeed from "@/components/trend-feed";
 import CodeArch from "@/components/code-arch";
 import Sidebar from "@/components/sidebar";
+import SettingsModal from "@/components/settings-modal";
 import { useUIContext } from "@/lib/ui-context";
 
 export default function Home() {
@@ -17,11 +18,6 @@ export default function Home() {
     setShowAgent,
   } = useUIContext();
 
-  const handleAskArch = (question: string) => {
-    setShowAgent(true);
-    // TODO: inject message handling via global state
-  };
-
   // Count visible panes for dynamic grid
   const visibleCount = [showAgent, showJson, showTrends, showArch].filter(Boolean).length;
   const gridCols = visibleCount <= 1 ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-2";
@@ -29,11 +25,12 @@ export default function Home() {
   return (
     <div className="relative z-[1] max-w-[1440px] mx-auto px-4 sm:px-6 py-5 w-full flex flex-col min-h-screen">
       <Header />
+      <SettingsModal />
       <div className="flex gap-4 flex-1">
         <Sidebar />
         <main className={`grid-dashboard flex-1 grid ${gridCols} gap-4 auto-rows-min`}>
           {showAgent && (
-            <AgentChat injectedMessage={null} onInjectedConsumed={() => {}} />
+            <AgentChat />
           )}
           {showJson && <JsonPrompter />}
           {showTrends && (
@@ -43,7 +40,7 @@ export default function Home() {
           )}
           {showArch && (
             <div className="glass rounded-xl border border-line p-5">
-              <CodeArch onAskArch={handleAskArch} />
+              <CodeArch />
             </div>
           )}
           {visibleCount === 0 && (

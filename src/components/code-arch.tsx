@@ -1,8 +1,6 @@
 "use client";
 
-interface CodeArchProps {
-  onAskArch: (question: string) => void;
-}
+import { useUIContext } from "@/lib/ui-context";
 
 const PROJECTS = [
   {
@@ -64,7 +62,9 @@ const PATTERNS = [
   },
 ];
 
-export default function CodeArch({ onAskArch }: CodeArchProps) {
+export default function CodeArch() {
+  const { injectMessage } = useUIContext();
+
   return (
     <div className="space-y-6">
       {/* Projects section */}
@@ -76,7 +76,7 @@ export default function CodeArch({ onAskArch }: CodeArchProps) {
           {PROJECTS.map((p) => (
             <button
               key={p.title}
-              onClick={() => onAskArch(p.query)}
+              onClick={() => injectMessage(p.query)}
               className="glass border border-line rounded-xl p-4 text-left transition-all glow-border cursor-pointer group"
             >
               <h4 className="text-sm font-bold mb-1.5">
@@ -100,7 +100,7 @@ export default function CodeArch({ onAskArch }: CodeArchProps) {
           {PATTERNS.map((p) => (
             <button
               key={p.title}
-              onClick={() => onAskArch(p.query)}
+              onClick={() => injectMessage(p.query)}
               className="glass border border-line rounded-xl p-4 text-left transition-all glow-border cursor-pointer group"
             >
               <h4 className="text-sm font-bold mb-1.5">

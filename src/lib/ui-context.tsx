@@ -1,8 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, FC } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode, FC } from 'react';
 
 interface UIContextProps {
+  // Pane visibility
   showAgent: boolean;
   setShowAgent: (v: boolean) => void;
   showJson: boolean;
@@ -11,6 +12,15 @@ interface UIContextProps {
   setShowTrends: (v: boolean) => void;
   showArch: boolean;
   setShowArch: (v: boolean) => void;
+
+  // Cross-pane messaging
+  injectedMessage: string | null;
+  injectMessage: (msg: string) => void;
+  consumeInjectedMessage: () => void;
+
+  // Global settings
+  showSettings: boolean;
+  setShowSettings: (v: boolean) => void;
 }
 
 const UIContext = createContext<UIContextProps | undefined>(undefined);
@@ -20,6 +30,18 @@ export const UIContextProvider: FC<{ children: ReactNode }> = ({ children }) => 
   const [showJson, setShowJson] = useState(true);
   const [showTrends, setShowTrends] = useState(true);
   const [showArch, setShowArch] = useState(true);
+
+  const [injectedMessage, setInjectedMessage] = useState<string | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+
+  const injectMessage = useCallback((msg: string) => {
+    setShowAgent(true);
+    setInjectedMessage(msg);
+  }, []);
+
+  const consumeInjectedMessage = useCallback(() => {
+    setInjectedMessage(null);
+  }, []);
 
   return (
     <UIContext.Provider
@@ -32,6 +54,11 @@ export const UIContextProvider: FC<{ children: ReactNode }> = ({ children }) => 
         setShowTrends,
         showArch,
         setShowArch,
+        injectedMessage,
+        injectMessage,
+        consumeInjectedMessage,
+        showSettings,
+        setShowSettings,
       }}
     >
       {children}

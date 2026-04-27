@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ReactMarkdown from "react-markdown";
 
-// Lucide icons will be installed next
-import { Settings, Trash2 } from "lucide-react";
+// Lucide icons
+import { Trash2 } from "lucide-react";
+import { useUIContext } from "@/lib/ui-context";
 
 const SYSTEM_PROMPT = `You are Razinger's personal AI agent. You know everything about him:
 - Name: Josef Razinger (goes by Razinger), final-year Software Engineering student at Kisii University, Nairobi
@@ -32,10 +33,7 @@ interface Message {
   content: string;
 }
 
-interface AgentChatProps {
-  injectedMessage?: string | null;
-  onInjectedConsumed?: () => void;
-}
+
 
 const INITIAL_MSG: Message = {
   role: "ai",
@@ -43,28 +41,14 @@ const INITIAL_MSG: Message = {
     "Hey Razinger! I'm your personal AI agent — I know your stack, your projects, and your goals. Ask me anything about cybersecurity, AI, your projects like Kivuli or EpiPredict, or system development.",
 };
 
-export default function AgentChat({
-  injectedMessage,
-  onInjectedConsumed,
-}: AgentChatProps) {
+export default function AgentChat() {
+  const { injectedMessage, consumeInjectedMessage } = useUIContext();
+
   const [messages, setMessages] = useState<Message[]>([INITIAL_MSG]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [apiKey, setApiKey] = useState("");
-  const [showSettings, setShowSettings] = useState(false);
 
   const scrollEndRef = useRef<HTMLDivElement>(null);
-
-  // Load API key from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem("gemini_api_key");
-    if (saved) setApiKey(saved);
-  }, []);
-
-  const saveApiKey = (key: string) => {
-    setApiKey(key);
-    localStorage.setItem("gemini_api_key", key);
-  };
 
   const scrollToBottom = () => {
     if (scrollEndRef.current) {
@@ -98,11 +82,13 @@ export default function AgentChat({
             content: m.content,
           }));
 
+        const currentApiKey = localStorage.getItem("gemini_api_key");
+
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            ...(apiKey ? { "x-custom-api-key": apiKey } : {}),
+            ...(currentApiKey ? { "x-custom-api-key": currentApiKey } : {}),
           },
           body: JSON.stringify({
             model: "gemini-2.5-flash",
@@ -123,16 +109,16 @@ export default function AgentChat({
       }
       setLoading(false);
     },
-    [loading, messages, apiKey]
+    [loading, messages]
   );
 
   // Handle injected messages from Code Arch tab
   useEffect(() => {
     if (injectedMessage) {
       sendMessage(injectedMessage);
-      onInjectedConsumed?.();
+      consumeInjectedMessage();
     }
-  }, [injectedMessage, onInjectedConsumed, sendMessage]);
+  }, [injectedMessage, consumeInjectedMessage, sendMessage]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -169,46 +155,8 @@ export default function AgentChat({
           >
             <Trash2 className="h-4 w-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowSettings(!showSettings)}
-            className={`h-7 w-7 ${
-              showSettings ? "text-neon bg-neon/10" : "text-dim hover:text-neon hover:bg-neon/10"
-            }`}
-            title="API Settings"
-          >
-            <Settings className="h-4 w-4" />
-          </Button>
         </div>
       </div>
-
-      {/* Settings Panel */}
-      {showSettings && (
-        <div className="bg-deep border-b border-line p-4 animate-fade-in">
-          <label className="block text-xs font-mono text-dim mb-2">
-            GOOGLE GEMINI API KEY (Saved locally)
-          </label>
-          <div className="flex gap-2">
-            <Input
-              type="password"
-              placeholder="AIzaSy..."
-              value={apiKey}
-              onChange={(e) => saveApiKey(e.target.value)}
-              className="font-mono text-xs bg-surface border-line focus:border-neon h-8"
-            />
-            <Button
-              className="h-8 bg-neon text-black font-mono text-xs font-bold hover:bg-neon/80"
-              onClick={() => setShowSettings(false)}
-            >
-              SAVE
-            </Button>
-          </div>
-          <p className="text-[10px] text-dim font-mono mt-2">
-            Your key is stored securely in your browser&apos;s localStorage and never touches our servers.
-          </p>
-        </div>
-      )}
 
       {/* Messages */}
       <ScrollArea className="flex-1">

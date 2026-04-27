@@ -90,3 +90,8 @@ Contributions, feature additions, or security patches to Agent Razinger are stro
 - **Sidebar Upgrade**: Rewrote sidebar with Lucide icons, active pane indicators with glow effects, panel count, version badge, and mobile hamburger menu support.
 - **Layout Improvements**: Dynamic 2-column grid layout, glass-wrapped pane containers, empty-state messaging when all panes are hidden.
 - **Hydration Fix**: Resolved Next.js hydration mismatch from browser extension attribute injection.
+
+### v0.4.0 - Global State & Cross-Pane Intelligence
+- **Centralized Settings Modal**: Migrated API key management from an inline Agent Chat panel to a globally accessible `SettingsModal` via the header, establishing a single source of truth for user preferences.
+- **Cross-Pane Communication**: Implemented `injectedMessage` in the global `UIContext`. The "Code Arch" and "Stack Patterns" components can now dynamically inject context queries directly into the "Agent Chat", bridging formerly disjointed components into a cohesive system.
+- **State Cleanup**: Removed redundant prop drilling (`onAskArch`, `injectedMessage` as props) in favor of the unified Context layer.
