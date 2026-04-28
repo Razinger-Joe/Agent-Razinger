@@ -8,8 +8,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import ReactMarkdown from "react-markdown";
 
 // Lucide icons
-import { Trash2 } from "lucide-react";
+import { Trash2, Mic, MicOff } from "lucide-react";
 import { useUIContext } from "@/lib/ui-context";
+import { useRazingerVoiceAgent, getRazingerGreeting, formatForVoice, RAZINGER_VOICES } from "./VoiceAgent";
 
 const SYSTEM_PROMPT = `You are Razinger's personal AI agent. You know everything about him:
 - Name: Josef Razinger (goes by Razinger), final-year Software Engineering student at Kisii University, Nairobi
@@ -37,8 +38,12 @@ interface Message {
 
 const INITIAL_MSG: Message = {
   role: "ai",
-  content:
-    "Hey Razinger! I'm your personal AI agent — I know your stack, your projects, and your goals. Ask me anything about cybersecurity, AI, your projects like Kivuli or EpiPredict, or system development.",
+  content: getRazingerGreeting(),
+};
+
+const voiceConfig = {
+  apiKey: process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY || "",
+  voiceId: RAZINGER_VOICES.ADAM,
 };
 
 export default function AgentChat() {
@@ -47,6 +52,12 @@ export default function AgentChat() {
   const [messages, setMessages] = useState<Message[]>([INITIAL_MSG]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const { speak, startListening, stopListening, isListening } = useRazingerVoiceAgent(voiceConfig);
+
+  useEffect(() => {
+    speak(getRazingerGreeting());
+  }, [speak]);
 
   const scrollEndRef = useRef<HTMLDivElement>(null);
 
@@ -101,6 +112,7 @@ export default function AgentChat() {
         const data = await res.json();
         const reply = data.content?.[0]?.text || "No response.";
         setMessages((prev) => [...prev, { role: "ai", content: reply }]);
+        speak(formatForVoice(reply));
       } catch {
         setMessages((prev) => [
           ...prev,
@@ -230,6 +242,20 @@ export default function AgentChat() {
           placeholder="Ask about your projects, cybersec, code structure..."
           className="flex-1 border-0 rounded-none bg-deep px-4 py-4 text-sm focus-visible:ring-0 placeholder:text-dim h-auto"
         />
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => {
+            if (isListening) stopListening();
+            else startListening((text) => setInput((prev) => prev + (prev ? " " : "") + text));
+          }}
+          className={`shrink-0 h-auto rounded-none border-l border-line px-4 hover:bg-neon/10 transition-colors ${
+            isListening ? "text-danger animate-pulse bg-danger/10" : "text-neon"
+          }`}
+          title="Voice Command"
+        >
+          {isListening ? <MicOff className="h-5 w-5 text-danger" /> : <Mic className="h-5 w-5" />}
+        </Button>
         <Button
           onClick={() => sendMessage(input)}
           disabled={loading || !input.trim()}
